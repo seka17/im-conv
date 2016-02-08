@@ -7,6 +7,7 @@ import re
 
 import tornado.ioloop
 import tornado.gen
+from tornado.locks import Semaphore
 
 from nats.io.client import Client as NATS
 
@@ -20,7 +21,6 @@ def create_image(text):
     # text will go out of cell
     if len(text) > 11 or len(text) <= 0:
         return None
-    print("Text to convert: %s" % text)
     # create black rectangle
     img = Image.new('1', (64, 17), 1)
     draw = ImageDraw.Draw(img)
@@ -38,7 +38,7 @@ def main():
     try:
         NATS_URI = [os.environ['NATS']]
     except:
-        NATS_URI = ["nats://127.0.0.1:4222"]
+        NATS_URI = ["nats://cs03.xyzrd.com:4222"]
     print NATS_URI
 
     while True:
@@ -47,24 +47,28 @@ def main():
             yield nc.connect(**options)
             break
         except:
-            time.sleep(10)
+            time.sleep(2)
 
     @tornado.gen.coroutine
     def subcribe_proxy(msg):
-            print ("[Received]: %s" % msg.data)
-            data = create_image(msg.data)
-            if data is None:
-                yield nc.publish(msg.reply, 'error')
-            else:
-                yield nc.publish(msg.reply, data)
+        yield pool_sema.acquire()
+        print ("[Received]: %s" % msg.data)
+        data = create_image(msg.data)
+        pool_sema.release()
+        if data is None:
+            yield nc.publish(msg.reply, 'error')
+        else:
+            yield nc.publish(msg.reply, data)
 
-    try:
-        topic = os.environ['SUB']
-    except:
-        topic = "image"
-    future = nc.subscribe(topic, "", subcribe_proxy)
+    # yield nc.subscribe("image", "", subcribe_proxy)
+    future = nc.subscribe("image", "", subcribe_proxy)
     sid = future.result()
 
 if __name__ == "__main__":
+    try:
+        n = os.environ['NUM']
+    except:
+        n = 10
+    pool_sema = Semaphore(n)
     main()
     tornado.ioloop.IOLoop.instance().start()
