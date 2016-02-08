@@ -1,11 +1,12 @@
 FROM python:2.7-alpine
 
-RUN apk --update add musl-dev gcc
+RUN apk --update add musl-dev gcc git
 
 RUN pip install --upgrade pip && pip install tornado && pip install pillow==2.6.1
 
-ADD . .
+# RUN cd python-nats && python setup.py install && cd .. && rm -R ./python-nats
+RUN git clone https://github.com/nats-io/python-nats && cd python-nats && python setup.py install
 
-RUN cd python-nats && python setup.py install && cd .. && rm -R ./python-nats
+ADD . .
 
 ENTRYPOINT python ./images.py
