@@ -16,18 +16,23 @@ from PIL import ImageDraw
 
 
 def create_image(text):
-    # strip non alphanumeric characters
-    text = re.sub(r'\W+', '', text)
-    # text will go out of cell
-    if len(text) > 11 or len(text) <= 0:
+    print("Text is ", text)
+    try:
+        # strip non alphanumeric characters
+        text = re.sub(r'\W+', '', text)
+        # text will go out of cell
+        if len(text) > 11 or len(text) <= 0:
+            return None
+        print("Text to convert: %s" % text)
+        # create black rectangle
+        img = Image.new('1', (64, 17), 1)
+        draw = ImageDraw.Draw(img)
+        # draw white text
+        draw.text((0, 3), text, 0)
+        output = StringIO.StringIO()
+        img.save(output, format='BMP')
+    except:
         return None
-    # create black rectangle
-    img = Image.new('1', (64, 17), 1)
-    draw = ImageDraw.Draw(img)
-    # draw white text
-    draw.text((0, 3), text, 0)
-    output = StringIO.StringIO()
-    img.save(output, format='BMP')
     return output.getvalue()
 
 
@@ -35,7 +40,7 @@ def create_image(text):
 def main():
     nc = NATS()
 
-    print('Listens nats address %s, subcribes to %s, run %d coroutines in the same time' % (NATS_URI, sub, n))
+    print('Listens nats address %s, subcribes to %s, run %d coroutines at the same time' % (NATS_URI, sub, n))
     while True:
         try:
             options = {"servers": NATS_URI}
@@ -55,14 +60,14 @@ def main():
         else:
             yield nc.publish(msg.reply, data)
 
-    future = nc.subscribe(sub, '', subcribe_proxy)
+    future = nc.subscribe(sub, "", subcribe_proxy)
     sid = future.result()
 
 if __name__ == "__main__":
     try:
         NATS_URI = [os.environ['NATS']]
     except:
-        NATS_URI = ["nats://localhost:4222"]
+        NATS_URI = ["nats://cs03.xyzrd.com:4222"]
 
     try:
         n = int(os.environ['NUM'])
