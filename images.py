@@ -51,7 +51,7 @@ def main():
         data = create_image(msg.data)
         pool_sema.release()
         if data is None:
-            yield nc.publish(msg.reply, 'error')
+            yield nc.publish(msg.reply, "error")
         else:
             yield nc.publish(msg.reply, data)
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     try:
         NATS_URI = [os.environ['NATS']]
     except:
-        NATS_URI = ['nats://localhost:4222']
+        NATS_URI = ["nats://localhost:4222"]
 
     try:
         n = int(os.environ['NUM'])
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     try:
         sub = os.environ['SUB']
     except:
-        sub = 'image'
+        sub = "image"
 
     pool_sema = Semaphore(n)
     main()
