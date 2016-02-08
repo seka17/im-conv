@@ -35,8 +35,7 @@ def create_image(text):
 def main():
     nc = NATS()
 
-    print NATS_URI
-
+    print('Listens nats address %s, subcribes to %s, run %d coroutines in the same time' % (NATS_URI, sub, n))
     while True:
         try:
             options = {"servers": NATS_URI}
