@@ -35,10 +35,6 @@ def create_image(text):
 def main():
     nc = NATS()
 
-    try:
-        NATS_URI = [os.environ['NATS']]
-    except:
-        NATS_URI = ["nats://cs03.xyzrd.com:4222"]
     print NATS_URI
 
     while True:
@@ -60,15 +56,25 @@ def main():
         else:
             yield nc.publish(msg.reply, data)
 
-    # yield nc.subscribe("image", "", subcribe_proxy)
-    future = nc.subscribe("image", "", subcribe_proxy)
+    future = nc.subscribe(sub, '', subcribe_proxy)
     sid = future.result()
 
 if __name__ == "__main__":
     try:
-        n = os.environ['NUM']
+        NATS_URI = [os.environ['NATS']]
+    except:
+        NATS_URI = ['nats://localhost:4222']
+
+    try:
+        n = int(os.environ['NUM'])
     except:
         n = 10
+
+    try:
+        sub = os.environ['SUB']
+    except:
+        sub = 'image'
+
     pool_sema = Semaphore(n)
     main()
     tornado.ioloop.IOLoop.instance().start()
