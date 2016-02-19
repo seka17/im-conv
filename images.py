@@ -3,7 +3,6 @@
 import time
 import os
 import StringIO
-import re
 
 import tornado.ioloop
 import tornado.gen
@@ -11,22 +10,19 @@ from tornado.locks import Semaphore
 
 from nats.io.client import Client as NATS
 
-from PIL import Image
-from PIL import ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 
 def create_image(text):
-    # strip non alphanumeric characters
-    text = re.sub(r'\W+', '', text)
     # text will go out of cell
-    if len(text) > 11 or len(text) <= 0:
-        return None
+    if len(text) > 11:
+        text = text[:11]
     print("Text to convert: %s" % text)
     # create black rectangle
     img = Image.new('1', (64, 17), 1)
     draw = ImageDraw.Draw(img)
     # draw white text
-    draw.text((0, 3), text, 0)
+    draw.text((0, 3), unicode(text, "utf-8"), 0, font=ImageFont.truetype('./fonts/arial.ttf', 10))
     output = StringIO.StringIO()
     img.save(output, format='BMP')
     return output.getvalue()
