@@ -3,6 +3,7 @@
 import time
 import os
 import StringIO
+import re
 
 import tornado.ioloop
 import tornado.gen
@@ -14,10 +15,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 def create_image(text):
+    text = unicode(text, "utf-8")
+    # remove odd chars
+    text = re.sub('[\'\"`]', '', text)
     # text will go out of cell
     if len(text) > 11:
         text = text[:11]
-    text = unicode(text, "utf-8")
     print("Text to convert: %s" % text)
     # create black rectangle
     img = Image.new('1', (64, 17), 1)
