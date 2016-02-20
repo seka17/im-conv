@@ -17,12 +17,13 @@ def create_image(text):
     # text will go out of cell
     if len(text) > 11:
         text = text[:11]
+    text = unicode(text, "utf-8")
     print("Text to convert: %s" % text)
     # create black rectangle
     img = Image.new('1', (64, 17), 1)
     draw = ImageDraw.Draw(img)
     # draw white text
-    draw.text((0, 3), unicode(text, "utf-8"), 0, font=ImageFont.truetype('./fonts/arial.ttf', 10))
+    draw.text((0, 3), text, 0, font=ImageFont.truetype('./fonts/arial.ttf', 10))
     output = StringIO.StringIO()
     img.save(output, format='BMP')
     return output.getvalue()
