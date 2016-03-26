@@ -1,18 +1,28 @@
 # coding: utf-8
-
 import time
 import os
 import StringIO
 import re
+from multiprocessing import Queue
 
-import tornado.ioloop
-import tornado.gen
-from tornado.locks import Semaphore
-
-from nats.io.client import Client as NATS
+import cgi
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 from PIL import Image, ImageDraw, ImageFont
 
+class Workers:
+
+    def __init__(self, arg):
+        self.func = Queue()
+        for _ in xrange(arg):
+            self.func.put(create_image)
+
+    def do(self, text):
+        func = self.func.get()
+        im = func(text)
+        # self.func.task_done()
+        self.func.put(create_image)
+        return im
 
 def create_image(text):
     text = unicode(text, "utf-8")
@@ -26,55 +36,41 @@ def create_image(text):
     img = Image.new('1', (64, 17), 1)
     draw = ImageDraw.Draw(img)
     # draw white text
-    draw.text((0, 3), text, 0, font=ImageFont.truetype('./fonts/arial.ttf', 10))
+    draw.text((0, 3), text, 0, font=ImageFont.truetype(
+        './fonts/arial.ttf', 10))
     output = StringIO.StringIO()
     img.save(output, format='BMP')
     return output.getvalue()
 
 
-@tornado.gen.coroutine
+class ServerHandler(BaseHTTPRequestHandler):
+
+    def do_POST(self):
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={'REQUEST_METHOD': 'POST',
+                     'CONTENT_TYPE': self.headers['Content-Type'],
+                     })
+        text = form["str"].value
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(workers.do(text))
+        self.wfile.close()
+        return
+
+try:
+    number = os.environ['NUM']
+except:
+    number = 10
+
+workers = Workers(number)
+
 def main():
-    nc = NATS()
 
-    print('Listens nats address %s, subcribes to %s, run %d coroutines at the same time' % (NATS_URI, sub, n))
-    while True:
-        try:
-            options = {"servers": NATS_URI}
-            yield nc.connect(**options)
-            break
-        except:
-            time.sleep(2)
-
-    @tornado.gen.coroutine
-    def subcribe_proxy(msg):
-        yield pool_sema.acquire()
-        print ("[Received]: %s" % msg.data)
-        data = create_image(msg.data)
-        pool_sema.release()
-        if data is None:
-            yield nc.publish(msg.reply, "error")
-        else:
-            yield nc.publish(msg.reply, data)
-
-    future = nc.subscribe(sub, "", subcribe_proxy)
-    sid = future.result()
+    PORT = 4655
+    httpd = HTTPServer(("", PORT), ServerHandler)
+    httpd.serve_forever()
 
 if __name__ == "__main__":
-    try:
-        NATS_URI = [os.environ['NATS']]
-    except:
-        NATS_URI = ["nats://cs03.xyzrd.com:4222"]
-
-    try:
-        n = int(os.environ['NUM'])
-    except:
-        n = 10
-
-    try:
-        sub = os.environ['SUB']
-    except:
-        sub = "image"
-
-    pool_sema = Semaphore(n)
     main()
-    tornado.ioloop.IOLoop.instance().start()
