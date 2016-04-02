@@ -15,13 +15,13 @@ class Workers:
     def __init__(self, arg):
         self.func = Queue()
         for _ in xrange(arg):
-            self.func.put(create_image)
+            self.func.put(True)
 
     def do(self, text):
-        func = self.func.get()
+        _ = self.func.get()
         im = func(text)
         # self.func.task_done()
-        self.func.put(create_image)
+        self.func.put(True)
         return im
 
 def create_image(text):
