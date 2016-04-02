@@ -13,15 +13,15 @@ from PIL import Image, ImageDraw, ImageFont
 class Workers:
 
     def __init__(self, arg):
-        self.func = Queue()
+        self.pool = Queue()
         for _ in xrange(arg):
-            self.func.put(True)
+            self.pool.put(True)
 
     def do(self, text):
-        _ = self.func.get()
-        im = func(text)
+        _ = self.pool.get()
+        im = create_image(text)
         # self.func.task_done()
-        self.func.put(True)
+        self.pool.put(True)
         return im
 
 def create_image(text):
