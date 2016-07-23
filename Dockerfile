@@ -10,3 +10,5 @@ RUN pip install --upgrade pip && pip install pillow==2.6.1
 ADD . .
 
 ENTRYPOINT python ./images.py
+
+EXPOSE 4655
